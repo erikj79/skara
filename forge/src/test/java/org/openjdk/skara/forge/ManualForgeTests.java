@@ -6,6 +6,7 @@ import org.openjdk.skara.forge.github.GitHubApplication;
 import org.openjdk.skara.forge.github.GitHubHost;
 import org.openjdk.skara.forge.gitlab.GitLabHost;
 import org.openjdk.skara.host.Credential;
+import org.openjdk.skara.host.HostUser;
 import org.openjdk.skara.issuetracker.Label;
 import org.openjdk.skara.network.URIBuilder;
 import org.openjdk.skara.proxy.HttpProxy;
@@ -97,5 +98,20 @@ public class ManualForgeTests {
         assertFalse(labels.contains(label3));
         assertFalse(labels.contains(label2));
         assertFalse(labels.contains(label1));
+    }
+
+    @Test
+    void addCollaborator() throws IOException {
+        var settings = ManualTestSettings.loadManualTestSettings();
+        var uri = URIBuilder.base(settings.getProperty("gitlab.uri")).build();
+        var user = settings.getProperty("gitlab.user");
+        var pat = settings.getProperty("gitlab.pat");
+        var credential = new Credential(user, pat);
+
+        var gitLabHost = new GitLabHost("gitlab", uri, false, credential, Set.of());
+
+        var repo = gitLabHost.repository(user + "/jdk").orElseThrow();
+
+        repo.addCollaborator(HostUser.create(settings.getProperty("gitlab.user.other"), "", ""), true);
     }
 }
