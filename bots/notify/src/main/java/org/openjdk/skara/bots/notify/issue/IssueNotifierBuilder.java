@@ -43,7 +43,7 @@ class IssueNotifierBuilder {
     private String buildName = null;
     private HostedRepository censusRepository = null;
     private String censusRef = null;
-    private String namespace = "openjdk.org";
+    private String namespace = null;
     private boolean useHeadVersion = false;
     private HostedRepository originalRepository;
     private boolean resolve = true;

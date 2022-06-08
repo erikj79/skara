@@ -43,6 +43,9 @@ import java.util.logging.Logger;
 import static org.openjdk.skara.issuetracker.jira.JiraProject.RESOLVED_IN_BUILD;
 
 class IssueNotifier implements Notifier, PullRequestListener, RepositoryListener {
+
+    private static final String DEFAULT_NAMESPACE = "openjdk.org";
+
     private final IssueProject issueProject;
     private final boolean reviewLink;
     private final URI reviewIcon;
@@ -117,7 +120,7 @@ class IssueNotifier implements Notifier, PullRequestListener, RepositoryListener
         return Optional.empty();
     }
 
-    private Optional<String> findIssueUsername(Commit commit, Path scratchPath) {
+    private Optional<String> findIssueUsername(String namespace, Commit commit, Path scratchPath) {
         var authorEmail = EmailAddress.from(commit.author().email());
         if (authorEmail.domain().equals(namespace)) {
             return Optional.of(authorEmail.localPart());
@@ -184,7 +187,7 @@ class IssueNotifier implements Notifier, PullRequestListener, RepositoryListener
                 if (issue.state() == Issue.State.OPEN) {
                     issue.setState(Issue.State.RESOLVED);
                     if (issue.assignees().isEmpty()) {
-                        var username = findIssueUsername(commit, scratchPath);
+                        var username = findIssueUsername(getNamespace(repository, commit), commit, scratchPath);
                         if (username.isPresent()) {
                             var assignee = issueProject.issueTracker().user(username.get());
                             assignee.ifPresent(hostUser -> issue.setAssignees(List.of(hostUser)));
@@ -254,7 +257,7 @@ class IssueNotifier implements Notifier, PullRequestListener, RepositoryListener
             var linkRepository = originalRepository != null ? originalRepository : repository;
             var commitNotification = CommitFormatters.toTextBrief(linkRepository, commit);
             var commitMessage = CommitMessageParsers.v1.parse(commit);
-            var username = findIssueUsername(commit, scratchPath);
+            var username = findIssueUsername(getNamespace(localRepository, commit), commit, scratchPath);
 
             for (var commitIssue : commitMessage.issues()) {
                 var optionalIssue = issueProject.issue(commitIssue.shortId());
@@ -458,17 +461,43 @@ class IssueNotifier implements Notifier, PullRequestListener, RepositoryListener
         if (requestedVersion == null) {
             try {
                 var hash = (useHeadVersion ? localRepository.resolve(branch).orElseThrow() : commit.hash());
-                var conf = localRepository.lines(Path.of(".jcheck/conf"), hash);
-                if (conf.isPresent()) {
-                    var parsed = JCheckConfiguration.parse(conf.get());
-                    var version = parsed.general().version();
-                    requestedVersion = version.orElse(null);
-                }
+                var conf = getJCheckConfiguration(localRepository, hash);
+                requestedVersion = conf.flatMap(c -> c.general().version()).orElse(null);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
         return requestedVersion;
+    }
+
+    private String getNamespace(Repository localRepository, Commit commit) {
+        if (namespace != null) {
+            return namespace;
+        }
+        var conf = getJCheckConfiguration(localRepository, commit.hash());
+        return conf.map(c -> c.census().domain()).orElse(DEFAULT_NAMESPACE);
+    }
+
+    private String getNamespace(HostedRepository hostedRepository, Commit commit) {
+        if (namespace != null) {
+            return namespace;
+        }
+        var confContents = hostedRepository.fileContents(".jcheck/conf", commit.hash().hex());
+        var conf = JCheckConfiguration.parse(confContents.lines().toList());
+        var domain = conf.census().domain();
+        if (domain != null) {
+            return domain;
+        }
+        return DEFAULT_NAMESPACE;
+    }
+
+    private Optional<JCheckConfiguration> getJCheckConfiguration(Repository localRepository, Hash hash) {
+        try {
+            Optional<List<String>> conf = localRepository.lines(Path.of(".jcheck/conf"), hash);
+            return conf.map(JCheckConfiguration::parse);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
