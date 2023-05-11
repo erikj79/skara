@@ -57,21 +57,13 @@ public class JbsVault {
         this.authProbe = URIBuilder.base(jiraUri).appendPath("/rest/api/2/myself").build();
     }
 
-    String getCookie() {
-        if (cookie != null) {
-            var authProbeRequest = new RestRequest(authProbe, authId, (r) -> Arrays.asList("Cookie", cookie));
-            var res = authProbeRequest.get()
-                                      .onError(error -> error.statusCode() >= 400 ? Optional.of(JSON.of("AUTH_ERROR")) : Optional.empty())
-                                      .execute();
-            if (res.isObject() && !res.contains("AUTH_ERROR")) {
-                return cookie;
-            }
+    String getCookie(boolean lastFailed) {
+        if (lastFailed || cookie == null) {
+            // Renewal time
+            var result = request.get("").execute();
+            cookie = result.get("data").get("cookie.name").asString() + "=" + result.get("data").get("cookie.value").asString();
+            log.info("Renewed Jira token (" + cookie + ")");
         }
-
-        // Renewal time
-        var result = request.get("").execute();
-        cookie = result.get("data").get("cookie.name").asString() + "=" + result.get("data").get("cookie.value").asString();
-        log.info("Renewed Jira token (" + cookie + ")");
         return cookie;
     }
 

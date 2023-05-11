@@ -58,7 +58,7 @@ public class RestRequest {
 
     @FunctionalInterface
     public interface AuthenticationGenerator {
-        List<String> getAuthHeaders(HttpRequest.Builder request);
+        List<String> getAuthHeaders(boolean lastFailed);
     }
 
     @FunctionalInterface
@@ -312,7 +312,7 @@ public class RestRequest {
     private HttpResponse<String> sendRequest(HttpRequest.Builder request, boolean skipLimiter) throws IOException {
         HttpResponse<String> response;
 
-        var authHeaders = addAuthHeaders(request);
+        var authHeaders = addAuthHeaders(request, false);
 
         var retryCount = 0;
         while (true) {
@@ -322,7 +322,7 @@ public class RestRequest {
                 // the authorization mechanism a chance to refresh stale tokens. Retry if
                 // we get a new set of authorization headers.
                 if (response.statusCode() == 401 && retryCount < 2 && authHeaders != null
-                        && !authHeaders.equals(addAuthHeaders(request))) {
+                        && !authHeaders.equals(addAuthHeaders(request, true))) {
                     log.info("Failed authorization for request: " + request.build().uri()
                             + ", retry count: " + retryCount);
                 } else {
@@ -353,9 +353,9 @@ public class RestRequest {
      * Adds authorization headers to the request builder. Returns the headers that
      * were added or null if no authorization mechanism was defined.
      */
-    private List<String> addAuthHeaders(HttpRequest.Builder request) {
+    private List<String> addAuthHeaders(HttpRequest.Builder request, boolean lastFailed) {
         if (authGen != null) {
-            var authHeaders = authGen.getAuthHeaders(request);
+            var authHeaders = authGen.getAuthHeaders(lastFailed);
             for (int i = 0; i < authHeaders.size() - 1; i += 2) {
                 String name  = authHeaders.get(i);
                 String value = authHeaders.get(i + 1);

@@ -73,7 +73,8 @@ public class JiraHost implements IssueTracker {
         var baseApi = URIBuilder.base(uri)
                                 .appendPath("/rest/api/2/")
                                 .build();
-        request = new RestRequest(baseApi, jiraVault.authId(), (r) -> Arrays.asList("Cookie", jiraVault.getCookie()));
+        request = new RestRequest(baseApi, jiraVault.authId(),
+                (lastFailed) -> Arrays.asList("Cookie", jiraVault.getCookie(lastFailed)));
     }
 
     JiraHost(URI uri, JiraVault jiraVault, String visibilityRole, String securityLevel) {
@@ -83,7 +84,8 @@ public class JiraHost implements IssueTracker {
         var baseApi = URIBuilder.base(uri)
                                 .appendPath("/rest/api/2/")
                                 .build();
-        request = new RestRequest(baseApi, jiraVault.authId(), (r) -> Arrays.asList("Cookie", jiraVault.getCookie()));
+        request = new RestRequest(baseApi, jiraVault.authId(),
+                (lastFailed) -> Arrays.asList("Cookie", jiraVault.getCookie(lastFailed)));
     }
 
     @Override
