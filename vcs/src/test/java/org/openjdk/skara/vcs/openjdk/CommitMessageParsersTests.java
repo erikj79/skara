@@ -44,6 +44,7 @@ public class CommitMessageParsersTests {
                      message.contributors());
         assertEquals(List.of("foo"), message.reviewers());
         assertEquals(List.of(), message.summaries());
+        assertEquals(List.of(), message.customTrailers());
         assertEquals(List.of(), message.additional());
     }
 
@@ -59,6 +60,7 @@ public class CommitMessageParsersTests {
         assertEquals(List.of(), message.contributors());
         assertEquals(List.of(), message.reviewers());
         assertEquals(List.of(), message.summaries());
+        assertEquals(List.of(), message.customTrailers());
         assertEquals(List.of("", "Summary: summary", "Reviewed-by: foo"), message.additional());
     }
 
@@ -75,6 +77,7 @@ public class CommitMessageParsersTests {
                      message.contributors());
         assertEquals(List.of("foo"), message.reviewers());
         assertEquals(List.of("This is a summary"), message.summaries());
+        assertEquals(List.of(), message.customTrailers());
         assertEquals(List.of(), message.additional());
     }
 
@@ -92,6 +95,7 @@ public class CommitMessageParsersTests {
                      message.contributors());
         assertEquals(List.of("foo"), message.reviewers());
         assertEquals(List.of(), message.summaries());
+        assertEquals(List.of(), message.customTrailers());
         assertEquals(List.of(), message.additional());
     }
 
@@ -110,6 +114,7 @@ public class CommitMessageParsersTests {
                      message.contributors());
         assertEquals(List.of("foo"), message.reviewers());
         assertEquals(List.of("This is a summary"), message.summaries());
+        assertEquals(List.of(), message.customTrailers());
         assertEquals(List.of(), message.additional());
     }
 
@@ -131,6 +136,7 @@ public class CommitMessageParsersTests {
         assertEquals(List.of("foo"), message.reviewers());
         assertEquals(List.of("This is a summary","","This is another summary paragraph"),
                      message.summaries());
+        assertEquals(List.of(), message.customTrailers());
         assertEquals(List.of(), message.additional());
     }
 
@@ -148,6 +154,7 @@ public class CommitMessageParsersTests {
         assertEquals(List.of(), message.reviewers());
         assertEquals(List.of("This is a summary","","This is another summary paragraph"),
                      message.summaries());
+        assertEquals(List.of(), message.customTrailers());
         assertEquals(List.of(), message.additional());
     }
 
@@ -161,6 +168,7 @@ public class CommitMessageParsersTests {
         assertEquals(List.of(), message.contributors());
         assertEquals(List.of(), message.reviewers());
         assertEquals(List.of(), message.summaries());
+        assertEquals(List.of(), message.customTrailers());
         assertEquals(List.of(), message.additional());
     }
 
@@ -179,6 +187,7 @@ public class CommitMessageParsersTests {
         assertEquals(List.of(new Author("Baz Bar", "baz@bar.org")), message.contributors());
         assertEquals(List.of("foo"), message.reviewers());
         assertEquals(List.of("This is a summary"), message.summaries());
+        assertEquals(List.of(), message.customTrailers());
         assertEquals(List.of(), message.additional());
     }
 
@@ -194,13 +203,14 @@ public class CommitMessageParsersTests {
         assertEquals(List.of(), message.contributors());
         assertEquals(List.of("foo"), message.reviewers());
         assertEquals(List.of(), message.summaries());
+        assertEquals(List.of(), message.customTrailers());
         assertEquals(List.of(), message.additional());
     }
 
     @Test
-    void parseVersion1WithAdditionalLines() {
+    void parseVersion1CommitWithIssueAndInvalidReviewLine() {
         var text = List.of("01234567: An issue",
-                           "Reviewed-by: foo");
+                "Reviewed-by: foo");
         var message = CommitMessageParsers.v1.parse(text);
 
         assertEquals("01234567: An issue", message.title());
@@ -208,23 +218,8 @@ public class CommitMessageParsersTests {
         assertEquals(List.of(), message.contributors());
         assertEquals(List.of(), message.reviewers());
         assertEquals(List.of(), message.summaries());
+        assertEquals(List.of(), message.customTrailers());
         assertEquals(List.of("Reviewed-by: foo"), message.additional());
-    }
-
-    @Test
-    void parseVersion1WithUknownTrailer() {
-        var text = List.of("01234567: An issue",
-                           "",
-                           "Reviewed-by: foo",
-                           "Unknown-trailer: bar");
-        var message = CommitMessageParsers.v1.parse(text);
-
-        assertEquals("01234567: An issue", message.title());
-        assertEquals(List.of(new Issue("01234567", "An issue")), message.issues());
-        assertEquals(List.of(), message.contributors());
-        assertEquals(List.of("foo"), message.reviewers());
-        assertEquals(List.of(), message.summaries());
-        assertEquals(List.of("Unknown-trailer: bar"), message.additional());
     }
 
     @Test
@@ -242,6 +237,7 @@ public class CommitMessageParsersTests {
         assertEquals(List.of(new Author("Föö Bår", "foo@bar.com"), new Author("Bår Bäz", "bar@baz.com")),
                      message.contributors());
         assertEquals(List.of(), message.summaries());
+        assertEquals(List.of(), message.customTrailers());
         assertEquals(List.of(), message.additional());
     }
 
@@ -260,6 +256,7 @@ public class CommitMessageParsersTests {
         assertEquals(List.of(new Author("Just An Example", "JustAn@example.com")),
                      message.contributors());
         assertEquals(List.of(), message.summaries());
+        assertEquals(List.of(), message.customTrailers());
         assertEquals(List.of(), message.additional());
     }
 
@@ -277,6 +274,7 @@ public class CommitMessageParsersTests {
         assertEquals(List.of("ab"), message.reviewers());
         assertEquals(List.of(), message.contributors());
         assertEquals(List.of(), message.summaries());
+        assertEquals(List.of(), message.customTrailers());
         assertEquals(List.of(), message.additional());
         assertEquals(Optional.of(new Hash("0123456789012345678901234567890123456789")), message.original());
     }
@@ -294,8 +292,27 @@ public class CommitMessageParsersTests {
         assertEquals(List.of(), message.reviewers());
         assertEquals(List.of(), message.contributors());
         assertEquals(List.of(), message.summaries());
+        assertEquals(List.of(), message.customTrailers());
         assertEquals(List.of(), message.additional());
         assertEquals(Optional.of(new Hash("0123456789012345678901234567890123456789")), message.original());
+    }
+
+    @Test
+    void invalidBackportOfTrailer() {
+        var text = List.of("01234567: An issue",
+                "",
+                "Backport-of: not-a-hash");
+
+        var message = CommitMessageParsers.v1.parse(text);
+
+        assertEquals("01234567: An issue", message.title());
+        assertEquals(List.of(new Issue("01234567", "An issue")), message.issues());
+        assertEquals(List.of(), message.reviewers());
+        assertEquals(List.of(), message.contributors());
+        assertEquals(List.of(), message.summaries());
+        assertEquals(List.of(new CommitMessage.CustomTrailer("Backport-of", "not-a-hash")), message.customTrailers());
+        assertEquals(List.of(), message.additional());
+        assertEquals(Optional.empty(), message.original());
     }
 
     @Test
@@ -309,6 +326,117 @@ public class CommitMessageParsersTests {
         assertEquals(List.of(), message.contributors());
         assertEquals(List.of(), message.reviewers());
         assertEquals(List.of(), message.summaries());
+        assertEquals(List.of(), message.customTrailers());
         assertEquals(List.of(""), message.additional());
+    }
+
+    @Test
+    void parseVersion1CustomTrailer() {
+        var text = List.of("01234567: An issue",
+                "",
+                "My-Custom-Trailer: my custom value");
+        var message = CommitMessageParsers.v1.parse(text);
+
+        assertEquals("01234567: An issue", message.title());
+        assertEquals(List.of(new Issue("01234567", "An issue")), message.issues());
+        assertEquals(List.of(), message.contributors());
+        assertEquals(List.of(), message.reviewers());
+        assertEquals(List.of(), message.summaries());
+        assertEquals(List.of(new CommitMessage.CustomTrailer("My-Custom-Trailer", "my custom value")), message.customTrailers());
+        assertEquals(List.of(), message.additional());
+    }
+
+    @Test
+    void parseVersion1CustomTrailerWhitespaceLine() {
+        var text = List.of("01234567: An issue",
+                " ",
+                "My-Custom-Trailer: my custom value");
+        var message = CommitMessageParsers.v1.parse(text);
+
+        assertEquals("01234567: An issue", message.title());
+        assertEquals(List.of(new Issue("01234567", "An issue")), message.issues());
+        assertEquals(List.of(), message.contributors());
+        assertEquals(List.of(), message.reviewers());
+        assertEquals(List.of(), message.summaries());
+        assertEquals(List.of(new CommitMessage.CustomTrailer("My-Custom-Trailer", "my custom value")), message.customTrailers());
+        assertEquals(List.of(), message.additional());
+    }
+
+    @Test
+    void parseVersion1BadCustomTrailerNotLast() {
+        var text = List.of("01234567: An issue",
+                "",
+                "My-Custom-Trailer: my custom value",
+                "");
+        var message = CommitMessageParsers.v1.parse(text);
+
+        assertEquals("01234567: An issue", message.title());
+        assertEquals(List.of(new Issue("01234567", "An issue")), message.issues());
+        assertEquals(List.of(), message.contributors());
+        assertEquals(List.of(), message.reviewers());
+        assertEquals(List.of("My-Custom-Trailer: my custom value"), message.summaries());
+        assertEquals(List.of(), message.customTrailers());
+        assertEquals(List.of(""), message.additional());
+    }
+
+    @Test
+    void parseVersion1CustomTrailerWithSummary() {
+        var text = List.of("01234567: An issue",
+                "",
+                "Note: this is text",
+                "",
+                "My-Custom-Trailer: my custom value");
+        var message = CommitMessageParsers.v1.parse(text);
+
+        assertEquals("01234567: An issue", message.title());
+        assertEquals(List.of(new Issue("01234567", "An issue")), message.issues());
+        assertEquals(List.of(), message.contributors());
+        assertEquals(List.of(), message.reviewers());
+        assertEquals(List.of("Note: this is text"), message.summaries());
+        assertEquals(List.of(new CommitMessage.CustomTrailer("My-Custom-Trailer", "my custom value")), message.customTrailers());
+        assertEquals(List.of(), message.additional());
+    }
+
+    @Test
+    void parseVersion1NoTrailer() {
+        var text = List.of("01234567: An issue",
+                "",
+                "Note: this is text",
+                "",
+                "Not-My-Custom-Trailer: this just text",
+                "",
+                "More text");
+        var message = CommitMessageParsers.v1.parse(text);
+
+        assertEquals("01234567: An issue", message.title());
+        assertEquals(List.of(new Issue("01234567", "An issue")), message.issues());
+        assertEquals(List.of(), message.contributors());
+        assertEquals(List.of(), message.reviewers());
+        assertEquals(List.of("Note: this is text", "", "Not-My-Custom-Trailer: this just text", "", "More text"), message.summaries());
+        assertEquals(List.of(), message.customTrailers());
+        assertEquals(List.of(), message.additional());
+    }
+
+    @Test
+    void parseVersion1CustomTrailersAndMore() {
+        var text = List.of("01234567: An issue",
+                "",
+                "Summary: my summary",
+                "",
+                "My-Custom-Trailer: my custom value",
+                "Reviewed-by: ab",
+                "Backport-of: 0123456789012345678901234567890123456789",
+                "Other-Custom-Trailer2: another value");
+        var message = CommitMessageParsers.v1.parse(text);
+
+        assertEquals("01234567: An issue", message.title());
+        assertEquals(List.of(new Issue("01234567", "An issue")), message.issues());
+        assertEquals(List.of(), message.contributors());
+        assertEquals(List.of("ab"), message.reviewers());
+        assertEquals(List.of("Summary: my summary"), message.summaries());
+        assertEquals(List.of(new CommitMessage.CustomTrailer("My-Custom-Trailer", "my custom value"),
+                new CommitMessage.CustomTrailer("Other-Custom-Trailer2", "another value")), message.customTrailers());
+        assertEquals(Optional.of(new Hash("0123456789012345678901234567890123456789")), message.original());
+        assertEquals(List.of(), message.additional());
     }
 }

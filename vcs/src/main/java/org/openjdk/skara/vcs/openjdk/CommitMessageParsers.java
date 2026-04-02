@@ -32,6 +32,9 @@ import java.util.stream.Collectors;
 import static org.openjdk.skara.vcs.openjdk.CommitMessageSyntax.*;
 
 public class CommitMessageParsers {
+
+    private static final Pattern WHITESPACE_OR_EMPTY = Pattern.compile("\\s*");
+
     private static Matcher matcher(Pattern p, List<String> lines, int index) {
         if (index >= lines.size()) {
             return null;
@@ -83,7 +86,7 @@ public class CommitMessageParsers {
             }
 
             var additional = lines.subList(i, lines.size());
-            return new CommitMessage(null, issues, reviewers, contributors, summaries, null, additional);
+            return new CommitMessage(null, issues, reviewers, contributors, summaries, null, List.of(), additional);
         }
     }
 
@@ -114,49 +117,59 @@ public class CommitMessageParsers {
             var coAuthors = new ArrayList<Author>();
             var reviewers = new ArrayList<String>();
             Hash original = null;
-            while (i < (lines.size() - 1) && lines.get(i).equals("")) {
-                i++;
+            var customTrailers = new ArrayList<CommitMessage.CustomTrailer>();
 
-                if (lines.get(i).startsWith("Co-authored-by:") ||
-                    lines.get(i).startsWith("Reviewed-by:") ||
-                    lines.get(i).startsWith("Backport-of:")) {
-                    // "trailers" section
+            // Parse summary and trailers, see https://git-scm.com/docs/git-interpret-trailers
+            // for reference. Trailers only appear in the last block of text, after the last
+            // empty, or whitespace only line.
 
-                    while ((m = matcher(CO_AUTHOR_PATTERN, lines, i)) != null) {
-                        for (var author : m.group(1).split(", ")) {
-                            coAuthors.add(Author.fromString(author));
-                        }
-                        i++;
-                    }
-
-                    if ((m = matcher(REVIEWED_BY_PATTERN, lines, i)) != null) {
-                        for (var name : m.group(1).split(", ")) {
-                            reviewers.add(name);
-                        }
-                        i++;
-                    }
-
-                    if ((m = matcher(BACKPORT_OF_PATTERN, lines, i)) != null) {
-                        original = new Hash(m.group(1));
-                        i++;
-                    }
-
-                    break; // there should be no more lines after the "trailers"
+            // Find start of trailer block
+            int trailerStart = lines.size() - 1;
+            for (int j = trailerStart; j > 0; j--) {
+                if (WHITESPACE_OR_EMPTY.matcher(lines.get(j)).matches()) {
+                    trailerStart = j;
+                    break;
                 }
+                if (!GENERIC_TRAILER_PATTERN.matcher(lines.get(j)).matches()) {
+                    break;
+                }
+            }
 
+            // Read summaries up until the trailer start
+            while (i < trailerStart) {
+                i++;
                 if (!firstDelimiter) {
                     summaries.add("");
                 } else {
                     firstDelimiter = false;
                 }
-                while (i < lines.size() && !lines.get(i).equals("")) {
+                while (i < lines.size() && !WHITESPACE_OR_EMPTY.matcher(lines.get(i)).matches()) {
                     summaries.add(lines.get(i));
                     i++;
                 }
             }
 
+            // Only try to process trailers if there is a trailer section. If we only
+            // found a single empty/whitespace line, that is not a trailer section and
+            // should be left for "additional" below.
+            if (i < lines.size() - 1) {
+                for (; i < lines.size(); i++) {
+                    if ((m = matcher(CO_AUTHOR_PATTERN, lines, i)) != null) {
+                        for (var author : m.group(1).split(", ")) {
+                            coAuthors.add(Author.fromString(author));
+                        }
+                    } else if ((m = matcher(REVIEWED_BY_PATTERN, lines, i)) != null) {
+                        Collections.addAll(reviewers, m.group(1).split(", "));
+                    } else if ((m = matcher(BACKPORT_OF_PATTERN, lines, i)) != null) {
+                        original = new Hash(m.group(1));
+                    } else if ((m = matcher(GENERIC_TRAILER_PATTERN, lines, i)) != null) {
+                        customTrailers.add(new CommitMessage.CustomTrailer(m.group(1), m.group(2)));
+                    }
+                }
+            }
+
             var additional = lines.subList(i, lines.size());
-            return new CommitMessage(title, issues, reviewers, coAuthors, summaries, original, additional);
+            return new CommitMessage(title, issues, reviewers, coAuthors, summaries, original, customTrailers, additional);
         }
     }
 

@@ -80,7 +80,7 @@ public class CommitMessageFormatters {
             }
 
             if (((message.reviewers().size() + message.contributors().size()) > 0) ||
-                 message.original().isPresent()) {
+                 message.original().isPresent() || !message.customTrailers().isEmpty()) {
                 lines.add("");
                 if (message.contributors().size() > 0) {
                     for (var contributor : message.contributors()) {
@@ -92,6 +92,9 @@ public class CommitMessageFormatters {
                 }
                 if (message.original().isPresent()) {
                     lines.add("Backport-of: " + message.original().get().hex());
+                }
+                for (CommitMessage.CustomTrailer customTrailer : message.customTrailers()) {
+                    lines.add(customTrailer.label() + ": " + customTrailer.value());
                 }
             }
 

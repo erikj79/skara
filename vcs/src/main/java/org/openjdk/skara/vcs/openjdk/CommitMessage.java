@@ -35,7 +35,10 @@ public class CommitMessage {
     private final List<Author> contributors;
     private final List<String> summaries;
     private final Hash original;
+    private final List<CustomTrailer> customTrailers;
     private final List<String> additional;
+
+    public record CustomTrailer(String label, String value) {}
 
     public CommitMessage(String title,
                          List<Issue> issues,
@@ -43,6 +46,7 @@ public class CommitMessage {
                          List<Author> contributors,
                          List<String> summaries,
                          Hash original,
+                         List<CustomTrailer> customTrailers,
                          List<String> additional) {
         this.title = title;
         this.issues = issues;
@@ -50,6 +54,7 @@ public class CommitMessage {
         this.contributors = contributors;
         this.summaries = summaries;
         this.original = original;
+        this.customTrailers = customTrailers;
         this.additional = additional;
     }
 
@@ -79,6 +84,10 @@ public class CommitMessage {
 
     public Optional<Hash> original() {
         return Optional.ofNullable(original);
+    }
+
+    public List<CustomTrailer> customTrailers() {
+        return customTrailers;
     }
 
     public List<String> additional() {

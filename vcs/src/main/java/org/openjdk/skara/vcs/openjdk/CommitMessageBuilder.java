@@ -35,6 +35,7 @@ public class CommitMessageBuilder {
     private List<String> summaries = new ArrayList<>();
     private List<String> reviewers = new ArrayList<>();
     private List<Author> contributors = new ArrayList<>();
+    private List<CommitMessage.CustomTrailer> customTrailers = new ArrayList<>();
 
     CommitMessageBuilder() {
     }
@@ -117,8 +118,13 @@ public class CommitMessageBuilder {
         return this;
     }
 
+    public CommitMessageBuilder customTrailers(CommitMessage.CustomTrailer... customTrailers) {
+        Collections.addAll(this.customTrailers, customTrailers);
+        return this;
+    }
+
     public CommitMessage create() {
-        return new CommitMessage(title, issues, reviewers, contributors, summaries, original, List.of());
+        return new CommitMessage(title, issues, reviewers, contributors, summaries, original, customTrailers, List.of());
     }
 
     public List<String> format(CommitMessageFormatter formatter) {
