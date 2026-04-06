@@ -332,21 +332,20 @@ public class PullRequestBotFactory implements BotFactory {
                         } else {
                             patternList = List.of(Pattern.compile(values.asString()));
                         }
+                        JSONValue jsonAlias = js.get("alias");
+                        String alias;
+                        if (jsonAlias == null) {
+                            alias = null;
+                        } else {
+                            alias = jsonAlias.asString();
+                        }
                         return new TrailerCommand.TrailerConfig(js.get("key").asString(),
-                                optionalString(js.get("alias")),
+                                alias,
                                 js.get("description").asString(),
                                 patternList);
                     });
         } else {
             return Stream.of();
-        }
-    }
-
-    private String optionalString(JSONValue value) {
-        if (value == null) {
-            return null;
-        } else {
-            return value.asString();
         }
     }
 }
