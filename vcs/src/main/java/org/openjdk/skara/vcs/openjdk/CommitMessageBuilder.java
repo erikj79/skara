@@ -118,6 +118,11 @@ public class CommitMessageBuilder {
         return this;
     }
 
+    public CommitMessageBuilder customTrailers(List<CommitMessage.CustomTrailer> customTrailers) {
+        this.customTrailers.addAll(customTrailers);
+        return this;
+    }
+
     public CommitMessageBuilder customTrailers(CommitMessage.CustomTrailer... customTrailers) {
         Collections.addAll(this.customTrailers, customTrailers);
         return this;

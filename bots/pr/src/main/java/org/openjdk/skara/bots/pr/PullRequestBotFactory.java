@@ -22,6 +22,7 @@
  */
 package org.openjdk.skara.bots.pr;
 
+import java.util.stream.Stream;
 import org.openjdk.skara.bot.*;
 import org.openjdk.skara.forge.*;
 import org.openjdk.skara.issuetracker.IssueProject;
@@ -118,6 +119,8 @@ public class PullRequestBotFactory implements BotFactory {
             requiredCheckedLines =
                 specific.get("requiredCheckedLines").asArray().stream().map(JSONValue::asString).toList();
         }
+
+        var globalTrailers = parseTrailers(specific.get("trailers")).toList();
 
         for (var repo : specific.get("repositories").fields()) {
             var censusRepo = configuration.repository(repo.value().get("census").asString());
@@ -293,6 +296,9 @@ public class PullRequestBotFactory implements BotFactory {
                 botBuilder.requiredCheckedLines(requiredCheckedLinesOverride);
             }
 
+            var trailers = Stream.concat(globalTrailers.stream(), parseTrailers(repo.value().get("trailers"))).toList();
+            botBuilder.trailerConfigs(trailers);
+
             var prBot = botBuilder.build();
             pullRequestBotMap.put(repository.name(), prBot);
             ret.add(prBot);
@@ -311,5 +317,36 @@ public class PullRequestBotFactory implements BotFactory {
         }
 
         return ret;
+    }
+
+    private Stream<TrailerCommand.TrailerConfig> parseTrailers(JSONValue trailerArray) {
+        if (trailerArray != null) {
+            return trailerArray.asArray().stream()
+                    .map(js -> {
+                        var values = js.get("values");
+                        List<Pattern> patternList;
+                        if (values.isArray()) {
+                            patternList = values.stream()
+                                    .map(v -> Pattern.compile(v.asString()))
+                                    .toList();
+                        } else {
+                            patternList = List.of(Pattern.compile(values.asString()));
+                        }
+                        return new TrailerCommand.TrailerConfig(js.get("key").asString(),
+                                optionalString(js.get("alias")),
+                                js.get("description").asString(),
+                                patternList);
+                    });
+        } else {
+            return Stream.of();
+        }
+    }
+
+    private String optionalString(JSONValue value) {
+        if (value == null) {
+            return null;
+        } else {
+            return value.asString();
+        }
     }
 }

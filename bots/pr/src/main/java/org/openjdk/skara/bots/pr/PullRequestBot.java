@@ -84,6 +84,7 @@ class PullRequestBot implements Bot {
     private final boolean cleanCommandEnabled;
     private final boolean checkContributorStatusForBackportCommand;
     private final List<String> requiredCheckedLines;
+    private final List<TrailerCommand.TrailerConfig> trailerConfigs;
 
     private Instant lastFullUpdate;
 
@@ -99,7 +100,8 @@ class PullRequestBot implements Bot {
                    boolean reviewCleanBackport, String mlbridgeBotName, MergePullRequestReviewConfiguration reviewMerge, boolean processPR, boolean processCommit,
                    boolean enableMerge, Set<String> mergeSources, boolean jcheckMerge, boolean enableBackport,
                    Map<String, List<PRRecord>> issuePRMap, Approval approval, boolean versionMismatchWarning, boolean cleanCommandEnabled,
-                   boolean checkContributorStatusForBackportCommand, List<String> requiredCheckedLines) {
+                   boolean checkContributorStatusForBackportCommand, List<String> requiredCheckedLines,
+                   List<TrailerCommand.TrailerConfig> trailerConfigs) {
         remoteRepo = repo;
         this.censusRepo = censusRepo;
         this.censusRef = censusRef;
@@ -140,6 +142,7 @@ class PullRequestBot implements Bot {
         this.cleanCommandEnabled = cleanCommandEnabled;
         this.checkContributorStatusForBackportCommand = checkContributorStatusForBackportCommand;
         this.requiredCheckedLines = requiredCheckedLines;
+        this.trailerConfigs = trailerConfigs;
 
         poller = new PullRequestPoller(repo, true);
 
@@ -422,6 +425,10 @@ class PullRequestBot implements Bot {
 
     public boolean checkContributorStatusForBackportCommand() {
         return checkContributorStatusForBackportCommand;
+    }
+
+    public List<TrailerCommand.TrailerConfig> trailerConfigs() {
+        return trailerConfigs;
     }
 
     public void addIssuePRMapping(String issueId, PRRecord prRecord) {

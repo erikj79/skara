@@ -38,7 +38,7 @@ public class CommitMessage {
     private final List<CustomTrailer> customTrailers;
     private final List<String> additional;
 
-    public record CustomTrailer(String label, String value) {}
+    public record CustomTrailer(String key, String value) {}
 
     public CommitMessage(String title,
                          List<Issue> issues,

@@ -126,6 +126,11 @@ public class TestHost implements Forge, IssueTracker {
      * use this as the name of the repository.
      */
     public static final String NON_EXISTING_REPO = "non-existing-repo";
+    /**
+     * For tests that do not actually need a local repository on disk, use
+     * this as the name.
+     */
+    public static final String FAKE_REPO = "fake-repo";
 
     private final int currentUser;
     private HostData data;
@@ -243,7 +248,9 @@ public class TestHost implements Forge, IssueTracker {
         if (NON_EXISTING_REPO.equals(name)) {
             return Optional.empty();
         }
-        if (data.repositories.containsKey(name)) {
+        if (FAKE_REPO.equals(name)) {
+            localRepository = null;
+        } else if (data.repositories.containsKey(name)) {
             localRepository = data.repositories.get(name);
         } else {
             localRepository = createLocalRepository();

@@ -52,7 +52,8 @@ public enum CommandNameEnum {
     author,
     touch,
     keepalive,
-    template;
+    template,
+    trailer;
 
     private boolean isMultiLine = false;
 

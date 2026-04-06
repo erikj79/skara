@@ -173,8 +173,12 @@ public class TestHostedRepository extends TestIssueProject implements HostedRepo
     public URI authenticatedUrl() {
         try {
             // We need a URL without a trailing slash
-            var fileName = localRepository.root().getFileName().toString();
-            return new URI(localRepository.root().getParent().toUri().toString() + fileName);
+            if (localRepository != null) {
+                var fileName = localRepository.root().getFileName().toString();
+                return new URI(localRepository.root().getParent().toUri().toString() + fileName);
+            } else {
+                return URI.create("localhost");
+            }
         } catch (IOException | URISyntaxException e) {
             throw new RuntimeException(e);
         }

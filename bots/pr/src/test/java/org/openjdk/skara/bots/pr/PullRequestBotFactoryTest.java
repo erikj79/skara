@@ -22,6 +22,7 @@
  */
 package org.openjdk.skara.bots.pr;
 
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 import org.openjdk.skara.json.JWCC;
 import org.openjdk.skara.test.*;
@@ -63,6 +64,14 @@ class PullRequestBotFactoryTest {
                         }
                       },
                       "requiredCheckedLines": [ "foo" ],
+                      "trailers": [
+                        {
+                          "key": "global-trailer",
+                          "alias": "global",
+                          "description": "Example global trailer",
+                          "values": "foo.*"
+                        }
+                      ],
                       "repositories": {
                         "repo2": {
                           "census": "census:master",
@@ -159,6 +168,16 @@ class PullRequestBotFactoryTest {
                           },
                           "versionMismatchWarning": true,
                           "cleanCommandEnabled": false,
+                          "trailers": [
+                            {
+                              "key": "trailer-1",
+                              "description": "Example repo specific trailer"
+                              "values": [
+                                "foo",
+                                "bar"
+                              ]
+                            }
+                          ],
                         }
                       },
                       "forks": {
@@ -203,6 +222,12 @@ class PullRequestBotFactoryTest {
             assertFalse(pullRequestBot2.jcheckMerge());
             assertFalse(pullRequestBot2.enableBackport());
             assertEquals(List.of("foo"), pullRequestBot2.requiredCheckedLines());
+            assertEquals(1, pullRequestBot2.trailerConfigs().size());
+            TrailerCommand.TrailerConfig trailerConfig = pullRequestBot2.trailerConfigs().getFirst();
+            assertEquals("global-trailer", trailerConfig.key());
+            assertEquals("global", trailerConfig.alias());
+            assertEquals("Example global trailer", trailerConfig.description());
+            assertEquals("foo.*", trailerConfig.values().getFirst().pattern());
 
             var pullRequestBot5 = (PullRequestBot) bots.stream()
                     .filter(bot -> bot.toString().equals("PullRequestBot@repo5"))
@@ -214,6 +239,7 @@ class PullRequestBotFactoryTest {
             assertFalse(pullRequestBot5.versionMismatchWarning());
             assertTrue(pullRequestBot5.cleanCommandEnabled());
             assertEquals(List.of("bar"), pullRequestBot5.requiredCheckedLines());
+            assertEquals(1, pullRequestBot5.trailerConfigs().size());
 
             var pullRequestBot6 = (PullRequestBot) bots.stream()
                     .filter(bot -> bot.toString().equals("PullRequestBot@repo6"))
@@ -241,6 +267,7 @@ class PullRequestBotFactoryTest {
             assertTrue(pullRequestBot6.enableBackport());
             assertFalse(pullRequestBot6.versionMismatchWarning());
             assertEquals(List.of("foo"), pullRequestBot6.requiredCheckedLines());
+            assertEquals(1, pullRequestBot6.trailerConfigs().size());
 
             var pullRequestBot7 = (PullRequestBot) bots.stream()
                     .filter(bot -> bot.toString().equals("PullRequestBot@repo7"))
@@ -251,6 +278,18 @@ class PullRequestBotFactoryTest {
             assertTrue(pullRequestBot7.versionMismatchWarning());
             assertFalse(pullRequestBot7.cleanCommandEnabled());
             assertEquals(List.of("foo"), pullRequestBot7.requiredCheckedLines());
+            assertEquals(2, pullRequestBot7.trailerConfigs().size());
+            TrailerCommand.TrailerConfig trailerConfig1 = pullRequestBot7.trailerConfigs().getFirst();
+            assertEquals("global-trailer", trailerConfig1.key());
+            assertEquals("global", trailerConfig1.alias());
+            assertEquals("Example global trailer", trailerConfig1.description());
+            assertEquals("foo.*", trailerConfig1.values().getFirst().pattern());
+            TrailerCommand.TrailerConfig trailerConfig2 = pullRequestBot7.trailerConfigs().get(1);
+            assertEquals("trailer-1", trailerConfig2.key());
+            assertNull(trailerConfig2.alias());
+            assertEquals("Example repo specific trailer", trailerConfig2.description());
+            assertEquals("foo", trailerConfig2.values().getFirst().pattern());
+            assertEquals("bar", trailerConfig2.values().get(1).pattern());
 
             var csrIssueBot1 = (CSRIssueBot) bots.stream()
                     .filter(bot -> bot.toString().equals("CSRIssueBot@TEST"))

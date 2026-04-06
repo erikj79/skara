@@ -94,7 +94,7 @@ public class CommitMessageFormatters {
                     lines.add("Backport-of: " + message.original().get().hex());
                 }
                 for (CommitMessage.CustomTrailer customTrailer : message.customTrailers()) {
-                    lines.add(customTrailer.label() + ": " + customTrailer.value());
+                    lines.add(customTrailer.key() + ": " + customTrailer.value());
                 }
             }
 

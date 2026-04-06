@@ -71,7 +71,8 @@ public class CommandExtractor {
             Map.entry(author.name(), new AuthorCommand()),
             Map.entry(keepalive.name(), new TouchCommand()),
             Map.entry(touch.name(), new TouchCommand()),
-            Map.entry(template.name(), new TemplateCommand())
+            Map.entry(template.name(), new TemplateCommand()),
+            Map.entry(trailer.name(), new TrailerCommand())
     );
 
     static class HelpCommand implements CommandHandler {

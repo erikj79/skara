@@ -132,6 +132,8 @@ public class CheckablePullRequest {
                             .reviewers(new ArrayList<>(reviewers));
         summary.ifPresent(commitMessageBuilder::summary);
 
+        commitMessageBuilder.customTrailers(Trailers.trailers(currentUser, comments));
+
         return String.join("\n", commitMessageBuilder.format(CommitMessageFormatters.v1));
     }
 

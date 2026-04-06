@@ -50,6 +50,10 @@ public class HostCredentials implements AutoCloseable {
 
     private final Logger log = Logger.getLogger("org.openjdk.skara.test");
 
+    static {
+        HttpProxy.setup();
+    }
+
     private interface Credentials {
         Forge createRepositoryHost(int userIndex);
         IssueTracker createIssueHost(int userIndex);
@@ -274,8 +278,6 @@ public class HostCredentials implements AutoCloseable {
     }
 
     public HostCredentials(TestInfo testInfo, JSONObject testHostConf) throws IOException  {
-        HttpProxy.setup();
-
         var credentialsFile = System.getProperty("credentials");
         testName = testInfo.getDisplayName();
 
@@ -355,22 +357,24 @@ public class HostCredentials implements AutoCloseable {
      */
     public HostedRepository getHostedRepository(String name) throws IOException {
         var host = getRepositoryHost();
-        var repo = credentials.getHostedRepository(host, name);
+        var repo = (TestHostedRepository) credentials.getHostedRepository(host, name);
 
-        var retryCount = 0;
-        while (credentialsLock == null) {
-            try {
-                if (getLock(repo)) {
-                    credentialsLock = repo;
-                }
-            } catch (IOException e) {
-                if (retryCount > 3) {
-                    throw e;
-                }
+        if (repo.localRepository() != null) {
+            var retryCount = 0;
+            while (credentialsLock == null) {
                 try {
-                    Thread.sleep(Duration.ofSeconds(1));
-                    retryCount++;
-                } catch (InterruptedException ignored) {
+                    if (getLock(repo)) {
+                        credentialsLock = repo;
+                    }
+                } catch (IOException e) {
+                    if (retryCount > 3) {
+                        throw e;
+                    }
+                    try {
+                        Thread.sleep(Duration.ofSeconds(1));
+                        retryCount++;
+                    } catch (InterruptedException ignored) {
+                    }
                 }
             }
         }

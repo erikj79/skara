@@ -75,15 +75,17 @@ public class TestPullRequestStore extends TestIssueStore {
      * changed since last time, updates the lastUpdated timestamp.
      */
     public Hash headHash() {
-        try {
-            var headHash = sourceRepository.localRepository().resolve(sourceRef);
-            if (headHash.isPresent() && !headHash.get().equals(this.headHash)) {
-                this.headHash = headHash.get();
-                setLastUpdate(ZonedDateTime.now());
-                setLastTouchedTime(ZonedDateTime.now());
+        if (sourceRepository.localRepository() != null) {
+            try {
+                var headHash = sourceRepository.localRepository().resolve(sourceRef);
+                if (headHash.isPresent() && !headHash.get().equals(this.headHash)) {
+                    this.headHash = headHash.get();
+                    setLastUpdate(ZonedDateTime.now());
+                    setLastTouchedTime(ZonedDateTime.now());
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
         }
         return this.headHash;
     }

@@ -61,7 +61,8 @@ class CheckWorkItem extends PullRequestWorkItem {
             + "(?:(?:\\s*:)?(?<space>[\\s\u00A0\u2007\u202F]+)(?<title>.+))?$");
     private static final Pattern BACKPORT_HASH_TITLE_PATTERN = Pattern.compile("^Backport\\s*([0-9a-z]{40})\\s*$", Pattern.CASE_INSENSITIVE);
     private static final Pattern BACKPORT_ISSUE_TITLE_PATTERN = Pattern.compile("^Backport\\s*(?:(?<prefix>[A-Za-z][A-Za-z0-9]+)-)?(?<id>[0-9]+)\\s*$", Pattern.CASE_INSENSITIVE);
-    private static final Pattern METADATA_COMMENTS_PATTERN = Pattern.compile("<!-- (?:backport)|(?:(add|remove) (?:contributor|reviewer))|(?:summary: ')|(?:solves: ')|(?:additional required reviewers)|(?:jep: ')|(?:csr: ')");
+    private static final Pattern METADATA_COMMENTS_PATTERN = Pattern.compile(
+            "<!-- (?:backport)|(?:(add|remove) (?:contributor|reviewer))|(?:summary: ')|(?:solves: ')|(?:additional required reviewers)|(?:jep: ')|(?:csr: ')|(?:trailer:)");
     private static final String ELLIPSIS = "…";
     protected static final String FORCE_PUSH_MARKER = "<!-- force-push suggestion -->";
     protected static final String FORCE_PUSH_SUGGESTION= """

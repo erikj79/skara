@@ -71,6 +71,7 @@ public class PullRequestBotBuilder {
     private boolean cleanCommandEnabled = true;
     private boolean checkContributorStatusForBackportCommand = true;
     private List<String> requiredCheckedLines = new ArrayList<String>();
+    private List<TrailerCommand.TrailerConfig> trailerConfigs = List.of();
 
     PullRequestBotBuilder() {
     }
@@ -275,6 +276,11 @@ public class PullRequestBotBuilder {
         return this;
     }
 
+    public PullRequestBotBuilder trailerConfigs(List<TrailerCommand.TrailerConfig> trailerConfigs) {
+        this.trailerConfigs = trailerConfigs;
+        return this;
+    }
+
     public PullRequestBot build() {
         return new PullRequestBot(repo, censusRepo, censusRef, labelConfiguration, externalPullRequestCommands,
                 externalCommitCommands, blockingCheckLabels, readyLabels, twoReviewersLabels, twentyFourHoursLabels,
@@ -282,6 +288,6 @@ public class PullRequestBotBuilder {
                 confOverrideName, confOverrideRef, censusLink, forks, integrators, excludeCommitCommentsFrom, enableCsr,
                 enableJep, reviewCleanBackport, mlbridgeBotName, reviewMerge, processPR, processCommit, enableMerge,
                 mergeSources, jcheckMerge, enableBackport, issuePRMap, approval, versionMismatchWarning, cleanCommandEnabled,
-                checkContributorStatusForBackportCommand, requiredCheckedLines);
+                checkContributorStatusForBackportCommand, requiredCheckedLines, trailerConfigs);
     }
 }
