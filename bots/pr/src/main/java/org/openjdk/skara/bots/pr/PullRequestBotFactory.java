@@ -120,7 +120,7 @@ public class PullRequestBotFactory implements BotFactory {
                 specific.get("requiredCheckedLines").asArray().stream().map(JSONValue::asString).toList();
         }
 
-        var globalTrailers = parseTrailers(specific.get("trailers")).toList();
+        var globalTrailers = parseTrailers(specific.get("trailers"));
 
         for (var repo : specific.get("repositories").fields()) {
             var censusRepo = configuration.repository(repo.value().get("census").asString());
@@ -296,7 +296,10 @@ public class PullRequestBotFactory implements BotFactory {
                 botBuilder.requiredCheckedLines(requiredCheckedLinesOverride);
             }
 
-            var trailers = Stream.concat(globalTrailers.stream(), parseTrailers(repo.value().get("trailers"))).toList();
+            var trailers = parseTrailers(repo.value().get("trailers"));
+            if (trailers.isEmpty()) {
+                trailers = globalTrailers;
+            }
             botBuilder.trailerConfigs(trailers);
 
             var prBot = botBuilder.build();
@@ -319,7 +322,7 @@ public class PullRequestBotFactory implements BotFactory {
         return ret;
     }
 
-    private Stream<TrailerCommand.TrailerConfig> parseTrailers(JSONValue trailerArray) {
+    private List<TrailerCommand.TrailerConfig> parseTrailers(JSONValue trailerArray) {
         if (trailerArray != null) {
             return trailerArray.asArray().stream()
                     .map(js -> {
@@ -343,9 +346,10 @@ public class PullRequestBotFactory implements BotFactory {
                                 alias,
                                 js.get("description").asString(),
                                 patternList);
-                    });
+                    })
+                    .toList();
         } else {
-            return Stream.of();
+            return List.of();
         }
     }
 }

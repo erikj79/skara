@@ -47,6 +47,11 @@ public class TrailerCommand implements CommandHandler {
         return trailer.name();
     }
 
+    @Override
+    public boolean allowedInBody() {
+        return true;
+    }
+
     private void showHelp(PullRequestBot bot, PrintWriter reply) {
         reply.println("Syntax: `/trailer (set|remove) (<key>|<alias>) [<value>]`. For example:");
         reply.println();
