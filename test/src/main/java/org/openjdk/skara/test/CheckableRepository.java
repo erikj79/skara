@@ -39,7 +39,7 @@ public class CheckableRepository {
     }
 
     public static Repository init(Path path, VCS vcs, Path appendableFilePath, Set<String> errorChecks, Set<String> warningChecks, String version) throws IOException {
-        var repo = Repository.init(path, vcs);
+        var repo = TestableRepository.init(path, vcs);
 
         Files.createDirectories(path.resolve(".checkable"));
         try (var output = Files.newBufferedWriter(path.resolve(".checkable/name.txt"))) {
